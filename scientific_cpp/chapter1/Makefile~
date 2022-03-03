@@ -1,0 +1,14 @@
+CPP=g++
+CPPFLAGS=-Wall -Werror
+
+.PHONY: all
+all: prob1 prob2
+
+prob1: hello_world.cpp
+	$(CPP) $(CPPFLAGS) -o prob1 hello_world.cpp
+prob2: product.cpp
+	$(CPP) $(CPPFLAGS) -o prob2 product.cpp
+.PHONY: clean
+
+clean:
+	rm -f prob1 prob2

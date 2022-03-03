@@ -1,0 +1,11 @@
+#include <iostream>
+#include <chrono>
+
+int main(int argc, char * argv[])
+{
+  auto time_now = std::chrono::system_clock::now();
+  auto now_c = std::chrono::system_clock::to_time_t(time_now);
+  std::cout << "Hello world.\n" << now_c << "\n";
+}
+
+

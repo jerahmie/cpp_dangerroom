@@ -1,0 +1,15 @@
+#include <iostream>
+
+using namespace std;
+
+int main(int argc, char* args[])
+{
+  int int1;
+  int int2;
+  cout << "Product of Two Integers:\n";
+  cout << "\nEnter the first number: ";
+  cin >> int1;
+  cout << "\nEnter the second number: ";
+  cin >> int2;
+  cout << "\n\nProduct: " << int1 * int2 << "\n";
+}

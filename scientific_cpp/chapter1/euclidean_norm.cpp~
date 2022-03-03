@@ -1,0 +1,9 @@
+#include <vector>
+#include <iostream>
+
+
+using namespace std;
+
+int main(int argc, char* argv[]){
+  cout << "Calculate Euclidean Norm of two Vectors\n";
+}

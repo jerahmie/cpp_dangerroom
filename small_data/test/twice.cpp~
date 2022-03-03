@@ -1,0 +1,8 @@
+#include <math>
+#include <iostream>
+
+template <typename T>
+T twice(T x)
+{
+  return 2 * x;
+}
