@@ -3,6 +3,6 @@
 template <typename T>
 T twice(T x)
 {
-  return 2 * x;
+  return 2 * fo;
 }
 #endif // TWICE_SIMPLE_H
