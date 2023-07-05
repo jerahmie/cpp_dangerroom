@@ -29,21 +29,37 @@ void aTree::print_data() {
   //  std::cout << "(build_tree) " << d1.x << " , " << d2.x '\n';
 //  std::cout << "(build_tree) " << rw.x << '\n';
 //}
-void build_tree(std::vector<DataPoint> &data) {
+void build_tree(std::vector<DataPoint> &data,
+                std::vector<DataPoint>::iterator data_begin,
+                std::vector<DataPoint>::iterator data_end, int depth) {
+  int data_len = std::distance(data_begin, data_end);
+  std::cout << "data_len: " << data_len << '\n';
+  if (data_len == 0 ) {
+    std::cout << "data_len: " << data_len << " data_begin: (" 
+              << (*data_begin).x << ", " << (*data_begin).y 
+              <<  ") data_end: (" << (*(data_end-1)).x  << ", "
+              << (*(data_end-1)).y << ")\n";
+  } else { 
     std::sort(data.begin(), data.end(), compare_x);
-    int mid = int(data.size()/2) ;
+    int mid = int(std::distance(data_begin, data_end)/2) ;
+    std::vector<DataPoint>::iterator end_left, begin_right;
+    end_left = data_begin + mid;
+    begin_right = data_begin + mid + 1;
     DataPoint &md = data[mid]; 
     std::cout << "(build_tree) mid: " << md.x << ", " << md.y << '\n';
-    std::vector<DataPoint>::iterator l_begin, l_end;
-    // left iterators
-    l_begin = data.begin();
-    l_end = data.begin() + mid;
-    std::cout << "(build_tree) data.size() " << data.size() << " , " << std::distance(l_begin, l_end) << '\n';
-    std::sort(l_begin, l_end, compare_y);    
+     
+    for (auto i=data_begin; i<end_left; i++) {std::cout << '(' << (*i).x << ',' << (*i).y << ") ";}
+    std::cout << " | (" << md.x << ',' << md.y << ") | ";
+    for (auto i=begin_right; i<data_end; i++) {std::cout << '(' << (*i).x << ',' << (*i).y << ") ";}
+    std::cout << '\n';
+    build_tree(data, data_begin, end_left, depth++);
+    build_tree(data, begin_right, data_end, depth++);
+    
+  }
 }
 
 aTree::aTree(std::vector<DataPoint> &data) : m_data(std::move(data)) {
-  build_tree(this->m_data);
+  build_tree(this->m_data, this->m_data.begin(), this->m_data.end(), 0);
 }
 
 int main(int argc, char* argv[])
@@ -53,7 +69,7 @@ int main(int argc, char* argv[])
   std::vector<std::unique_ptr<DataPoint>> my_data;
   std::vector<DataPoint> data;  
   
-  for (int i=0; i<=10; i++) {
+  for (int i=0; i<10; i++) {
     my_data.push_back(std::make_unique<DataPoint>(DataPoint(rand() % 10, rand() %10)));
     data.push_back(DataPoint(rand() % 10, rand() %10));
   }
