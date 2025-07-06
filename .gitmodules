@@ -5,3 +5,6 @@
 [submodule "graphics/sdl3_cmake/vendor/SDL"]
 	path = graphics/sdl3_cmake/vendor/SDL
 	url = https://github.com/libsdl-org/SDL.git
+[submodule "graphics/sdl3_00_cmake/vendor/SDL"]
+	path = graphics/sdl3_00_cmake/vendor/SDL
+	url = https://github.com/libsdl-org/SDL.git
