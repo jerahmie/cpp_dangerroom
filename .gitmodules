@@ -2,6 +2,6 @@
 	path = extern/pybind11
 	url = ../../pybind/pybind11/
 	branch = stable
-[submodule "graphics/sdl3_00_cmake/vendor/SDL"]
-	path = graphics/sdl3_00_cmake/vendor/SDL
+[submodule "graphics/vendor/SDL"]
+	path = graphics/vendor/SDL
 	url = https://github.com/libsdl-org/SDL.git
