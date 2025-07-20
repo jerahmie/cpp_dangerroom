@@ -44,40 +44,44 @@ GLuint LoadShader(const char* vertexPath, const char* fragmentPath) {
     glShaderSource(vertexShader, 1, &vShaderSource, NULL);
     glCompileShader(vertexShader);
     CheckShaderCompilation(vertexShader, "VERTEX");
-    
+
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fShaderSource, NULL);
     glCompileShader(fragmentShader);
     CheckShaderCompilation(fragmentShader, "FRAGMENT");
-    
+
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
     CheckShaderLinking(shaderProgram);
-    
+
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
     return shaderProgram;
 }
 
-GLuint LoadTexture(const char* filepath) {
-    stbi_set_flip_vertically_on_load_thread(true);
 
+GLuint LoadTexture(const char* filepath) {
+    stbi_set_flip_vertically_on_load(true);
+    
     int width, height, nrChannels;
     unsigned char* data = stbi_load(filepath, &width, &height, &nrChannels, STBI_rgb_alpha);
     if (!data) {
         std::cerr << "Failed to load image: " << filepath << std::endl;
         return 0;
     }
-
+    
     std::cout << "Loaded image: " << filepath << " (" << width << "x" << height << ")\n";
 
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     stbi_image_free(data);
     return texture;
@@ -86,22 +90,26 @@ GLuint LoadTexture(const char* filepath) {
 void CheckGLError(const char* function) {
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
-       std::cerr << "OpenGL Error in " << function << ": " << err << std::endl;
+        std::cerr << "OpenGL Error in " << function << ": " << err << std::endl;
     }
 }
 
-int main(){
-    SDL_Init(SDL_INIT_VIDEO);
 
-    // Request OpenGL 3.3 Core Profile
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+// Main function
+int main() {
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    
+    // Request OpenGL 3.3 Core Profile (Required on macOS)
+    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+    //SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     SDL_Window* window = SDL_CreateWindow("SDL3 Blur Shader", 800, 600, SDL_WINDOW_OPENGL);
     SDL_GLContext context = SDL_GL_CreateContext(window);
-
-    glewExperimental = GL_TRUE;
+    
+    // Initialize GLEW (MUST be after OpenGL context creation)
+    //glewExperimental = GL_TRUE; // Fixes issues with some drivers
     GLenum err = glewInit();
     if (err != GLEW_OK) {
         std::cerr << "GLEW Init Error: " << glewGetErrorString(err) << std::endl;
@@ -111,8 +119,8 @@ int main(){
         return -1;
     }
 
-    std::cout << "GLEW initialized successfully1" << std::endl;
-
+    std::cout << "GLEW initialized successfully!" << std::endl;
+    
     const GLubyte* renderer = glGetString(GL_RENDERER);
     const GLubyte* version = glGetString(GL_VERSION);
     std::cout << "Renderer: " << renderer << std::endl;
@@ -120,37 +128,40 @@ int main(){
 
     // Now it's safe to use OpenGL functions
     GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-
+    glGenVertexArrays(1, &VAO); // No crash here now!
+    
     GLuint VBO, EBO;
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
-
+    
     glBindVertexArray(VAO);
 
     // Load shaders
     GLuint shaderProgram = LoadShader("../resources/vertex_shader.glsl", "../resources/blur_shader.glsl");
-
+    
     // Quad vertices
     float quadVertices[] = {
-        // Positions    // TexCoords
-        -1.0f,   1.0f,   0.0f,   1.0f,
-        -1.0f,  -1.0f,   0.0f,   0.0f,
-         1.0f,  -1.0f,   1.0f,   0.0f,
-         1.0f,   1.0f,   1.0f,   1.0f 
+        // Positions   // TexCoords
+        -1.0f,  1.0f,   0.0f, 1.0f,
+        -1.0f, -1.0f,   0.0f, 0.0f,
+            1.0f, -1.0f,   1.0f, 0.0f,
+            1.0f,  1.0f,   1.0f, 1.0f
     };
     unsigned int indices[] = { 0, 1, 2, 0, 2, 3 };
-
+    
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
-
+    
     GLuint texture = LoadTexture("../resources/lettuce.png");
-
+    
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -158,7 +169,7 @@ int main(){
 
     bool running = true;
     SDL_Event event;
-   
+
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
@@ -167,7 +178,7 @@ int main(){
         }
         
         glClear(GL_COLOR_BUFFER_BIT);
-
+        
         glUseProgram(shaderProgram);
         CheckGLError("glUseProgram");
 
@@ -203,6 +214,7 @@ int main(){
     SDL_GL_DestroyContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
 
     return 0;
 }
