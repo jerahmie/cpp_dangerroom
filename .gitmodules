@@ -5,3 +5,7 @@
 [submodule "graphics/vendor/SDL"]
 	path = graphics/vendor/SDL
 	url = https://github.com/libsdl-org/SDL.git
+[submodule "graphics/vendor/GLEW"]
+	path = graphics/vendor/GLEW
+	url = https://github.com/nigels-com/glew.git
+
