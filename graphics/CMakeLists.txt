@@ -6,10 +6,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find OpenGL
 find_package(OpenGL REQUIRED)
+find_package(GLUT REQUIRED)
 
 # Use Ubuntu-installed GLEW 
-set(GLEW_INCLUDE_DIR "/usr/include/GL")
-set(GLEW_LIBRARY "/usr/lib/x86_64-linux-gnu/libGLEW.so")
+#set(GLEW_INCLUDE_DIR "/usr/include/GL")
+#set(GLEW_LIBRARY "/usr/lib/x86_64-linux-gnu/libGLEW.so")
 
 set(STB_INCLUDE_DIR "/usr/include/stb")
 

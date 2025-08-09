@@ -3,4 +3,5 @@ target_sources(${PROJECT_NAME} PRIVATE main.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE vendor
         ${SDL3_LIBRARIES}
         ${OPENGL_LIBRARIES}
-        ${GLEW_LIBRARY})
+        ${GLEW_LIBRARY}
+        GLUT::GLUT)
