@@ -7,9 +7,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find OpenGL
 find_package(OpenGL REQUIRED)
 
-set(STB_INCLUDE_DIR "/usr/include/stb")
+#set(STB_INCLUDE_DIR "/usr/include/stb")
 
-include_directories(${STB_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${GLEW_INCLUDE_DIR})
+include_directories( ${OPENGL_INCLUDE_DIR})
 
 # Vendor includes SDL3
 add_subdirectory(vendor)
