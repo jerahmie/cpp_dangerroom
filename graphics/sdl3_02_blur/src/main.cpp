@@ -18,17 +18,17 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3_image/SDL_image.h>
+#include <SDL3/SDL_gpu.h>
 
 
 /* Draw a Gimpish background pattern to show transparency in the image */
 static void draw_background(SDL_Renderer *renderer, int w, int h)
 {
     const SDL_Color col[2] = {
-        { 0x66, 0x66, 0x66, 0xff },
+        { 0x66, 0x66, 0x66, 0x00 },
         { 0x99, 0x99, 0x99, 0xff }
     };
     const int dx = 8, dy = 8;
@@ -49,11 +49,35 @@ static void draw_background(SDL_Renderer *renderer, int w, int h)
     }
 }
 
+/* Probe GPU device and log results */
+int display_gpu_info(SDL_GPUDevice* gpu){
+    int result = 0;
+    SDL_Log("Probing GPU device...\n");
+    SDL_PropertiesID propID = SDL_GetGPUDeviceProperties(gpu);
+    
+    if (!propID) {
+        SDL_Log("SDL_GetGPUDeviceProperies() failed: %s\n", SDL_GetError());
+        result = 2;
+    }
+    SDL_Log("GPU device name: %s\n",
+        SDL_GetStringProperty(propID, SDL_PROP_GPU_DEVICE_NAME_STRING, "Not Set."));
+    SDL_Log("GPU device driver info: %s\n",
+            SDL_GetStringProperty(propID, SDL_PROP_GPU_DEVICE_DRIVER_INFO_STRING, "Not Set."));
+    SDL_Log("GPU device driver name: %s\n",
+            SDL_GetStringProperty(propID, SDL_PROP_GPU_DEVICE_DRIVER_NAME_STRING, "Not Set."));
+    SDL_Log("GPU device driver version: %s\n",
+            SDL_GetStringProperty(propID, SDL_PROP_GPU_DEVICE_DRIVER_VERSION_STRING, "Not Set."));
+
+    return result; 
+}
+
 int main(int argc, char *argv[])
 {
     SDL_Window *window = NULL;
     SDL_Renderer *renderer = NULL;
     SDL_Texture *texture = NULL;
+    SDL_GPUDevice *gpu = NULL;
+    SDL_PropertiesID  propID;
     Uint32 flags;
     float w, h;
     int i;
@@ -93,6 +117,25 @@ int main(int argc, char *argv[])
     window = SDL_CreateWindow("", 0, 0, flags);
     if (!window) {
         SDL_Log("SDL_CreateWindow() failed: %s\n", SDL_GetError());
+        result = 2;
+        goto done;
+    }
+
+    // Enable GPU device
+    gpu = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, false, NULL);
+
+    if (!gpu) {
+        SDL_Log("SDL_CreateGPUDevice() failed: %s\n", SDL_GetError());
+        result = 2;
+        goto done;
+    }
+   
+    // Probe GPU device and log results
+    display_gpu_info(gpu);
+
+    // Claim window for GPU
+    if (!SDL_ClaimWindowForGPUDevice(gpu, window)){
+        SDL_Log("SDL_ClaimWindowForGPUDevice failed: %s\n", SDL_GetError());
         result = 2;
         goto done;
     }
@@ -304,6 +347,8 @@ int main(int argc, char *argv[])
 
     /* We're done! */
 done:
+    SDL_DestroyGPUDevice(gpu);
+    SDL_ReleaseWindowFromGPUDevice(gpu, window);
     SDL_Quit();
     return result;
 }
