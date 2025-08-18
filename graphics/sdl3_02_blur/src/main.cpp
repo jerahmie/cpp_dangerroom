@@ -52,12 +52,20 @@ static void draw_background(SDL_Renderer *renderer, int w, int h)
 /* Probe GPU device and log results */
 int display_gpu_info(SDL_GPUDevice* gpu){
     int result = 0;
+    const char *platform_os;
+    
     SDL_Log("Probing GPU device...\n");
     SDL_PropertiesID propID = SDL_GetGPUDeviceProperties(gpu);
-    
     if (!propID) {
         SDL_Log("SDL_GetGPUDeviceProperies() failed: %s\n", SDL_GetError());
         result = 2;
+    }
+    SDL_Log("SDL Revision: %s\n", SDL_GetRevision());
+    platform_os = SDL_GetPlatform();
+    if (strcmp(platform_os, "Linux")) {
+        SDL_Log("OS: Linux\n");
+    } else {
+        SDL_Log("OS: %s\n", platform_os);
     }
     SDL_Log("GPU device name: %s\n",
         SDL_GetStringProperty(propID, SDL_PROP_GPU_DEVICE_NAME_STRING, "Not Set."));
@@ -70,6 +78,19 @@ int display_gpu_info(SDL_GPUDevice* gpu){
 
     return result; 
 }
+
+int create_shader(SDL_GPUDevice* gpu){
+    int result = 0;
+    SDL_GPUShader *shader;
+    //shader = SDL_CreateGPUShader(gpu, );
+    if (!shader) {
+        SDL_Log("SDL_CreateGPUShader failed: %s\n", SDL_GetError());
+        result = 2;
+    }
+
+    return result;
+}
+
 
 int main(int argc, char *argv[])
 {
