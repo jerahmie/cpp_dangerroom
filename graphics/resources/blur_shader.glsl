@@ -1,11 +1,20 @@
-#version 330 core
+#version 450 core
 
-out vec4 FragColor;
-in vec2 TexCoord;
+// out vec4 FragColor;
+// in vec2 TexCoord;
+// uniform sampler2D screenTexture;
 
-uniform sampler2D screenTexture;
-uniform vec2 resolution;
-uniform float blurRadius;
+// uniform vec2 resolution;
+// uniform float blurRadius;
+
+
+layout(location = 0) in vec2 TexCoord;
+layout(location = 0) out vec4 FragColor;
+
+layout(binding=0) uniform sampler2D screenTexture;
+
+layout(location = 0) uniform vec2 resolution;
+layout(location = 1) uniform float blurRadius;
 
 void main() {
     vec2 tex_offset = 1.0 / resolution; // Size of one texel

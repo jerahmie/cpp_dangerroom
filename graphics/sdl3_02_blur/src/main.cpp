@@ -62,11 +62,7 @@ int display_gpu_info(SDL_GPUDevice* gpu){
     }
     SDL_Log("SDL Revision: %s\n", SDL_GetRevision());
     platform_os = SDL_GetPlatform();
-    if (strcmp(platform_os, "Linux")) {
-        SDL_Log("OS: Linux\n");
-    } else {
-        SDL_Log("OS: %s\n", platform_os);
-    }
+		SDL_Log("OS: %s\n", platform_os);
     SDL_Log("GPU device name: %s\n",
         SDL_GetStringProperty(propID, SDL_PROP_GPU_DEVICE_NAME_STRING, "Not Set."));
     SDL_Log("GPU device driver info: %s\n",
@@ -99,6 +95,9 @@ int main(int argc, char *argv[])
     SDL_Texture *texture = NULL;
     SDL_GPUDevice *gpu = NULL;
     SDL_PropertiesID  propID;
+		SDL_GPUShader *shader = NULL;
+		SDL_GPUShaderCreateInfo shaderCreateInfo;
+		//SDL_GPUCommandBuffer *commandBuffer = NULL;
     Uint32 flags;
     float w, h;
     int i;
@@ -160,6 +159,8 @@ int main(int argc, char *argv[])
         result = 2;
         goto done;
     }
+
+		
 
     if (SDL_GetBooleanProperty(SDL_GetDisplayProperties(SDL_GetPrimaryDisplay()), SDL_PROP_DISPLAY_HDR_ENABLED_BOOLEAN, false)) {
         SDL_PropertiesID props = SDL_CreateProperties();
@@ -368,8 +369,9 @@ int main(int argc, char *argv[])
 
     /* We're done! */
 done:
-    SDL_DestroyGPUDevice(gpu);
+		//SDL_ReleaseGPUShader(gpu, shader);
     SDL_ReleaseWindowFromGPUDevice(gpu, window);
+    SDL_DestroyGPUDevice(gpu);
     SDL_Quit();
     return result;
 }
