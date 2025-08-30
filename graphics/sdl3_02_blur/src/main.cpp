@@ -95,8 +95,14 @@ int main(int argc, char *argv[])
     SDL_Texture *texture = NULL;
     SDL_GPUDevice *gpu = NULL;
     SDL_PropertiesID  propID;
+		SDL_GPUCommandBuffer *commandBuffer = NULL;
 		SDL_GPUShader *shader = NULL;
-		SDL_GPUShaderCreateInfo shaderCreateInfo;
+		size_t vertexCodeSize;
+		void *vertexCode;
+		size_t fragmentCodeSize;
+		void *fragmentCode;
+		SDL_GPUShaderCreateInfo vertexInfo{};
+		SDL_GPUShaderCreateInfo fragmentInfo{};
 		//SDL_GPUCommandBuffer *commandBuffer = NULL;
     Uint32 flags;
     float w, h;
@@ -160,7 +166,39 @@ int main(int argc, char *argv[])
         goto done;
     }
 
-		
+		// Load Precompiled Vertex Shader
+		vertexCode = SDL_LoadFile("vertex.spv", &vertexCodeSize);
+		if (!vertexCode){
+			SDL_Log("SDL_LoadFile failed: %s\n", SDL_GetError());
+			goto done;
+		}
+		SDL_Log("Vertex shader size: %ld\n", vertexCodeSize);
+		vertexInfo.code = (Uint8*)vertexCode;
+		vertexInfo.code_size = vertexCodeSize;
+		vertexInfo.entrypoint = "main";
+		vertexInfo.format = SDL_GPU_SHADERFORMAT_SPIRV;
+		vertexInfo.stage = SDL_GPU_SHADERSTAGE_VERTEX;
+		vertexInfo.num_samplers = 0;
+		vertexInfo.num_storage_buffers = 0;
+		vertexInfo.num_uniform_buffers = 0;
+		vertexInfo.props = 0;
+	
+		// Load Precompiled Fragment Shader
+		fragmentCode = SDL_LoadFile("blur.spv", &fragmentCodeSize);
+		if (!fragmentCode) {
+			SDL_Log("SDL_LoadFile failed: %s\n", SDL_GetError());
+			goto done;
+		}
+		SDL_Log("Fragment shader size: %ld\n", fragmentCodeSize);
+		fragmentInfo.code = (Uint8*)fragmentCode;
+		fragmentInfo.code_size = fragmentCodeSize;
+		fragmentInfo.entrypoint = "main";
+		fragmentInfo.format = SDL_GPU_SHADERFORMAT_SPIRV;
+		fragmentInfo.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
+		fragmentInfo.num_samplers = 0;
+		fragmentInfo.num_storage_buffers = 0;
+		fragmentInfo.num_uniform_buffers = 0;
+		fragmentInfo.props = 0;	
 
     if (SDL_GetBooleanProperty(SDL_GetDisplayProperties(SDL_GetPrimaryDisplay()), SDL_PROP_DISPLAY_HDR_ENABLED_BOOLEAN, false)) {
         SDL_PropertiesID props = SDL_CreateProperties();
@@ -370,8 +408,11 @@ int main(int argc, char *argv[])
     /* We're done! */
 done:
 		//SDL_ReleaseGPUShader(gpu, shader);
+		SDL_free(vertexCode);
+		SDL_free(fragmentCode);
     SDL_ReleaseWindowFromGPUDevice(gpu, window);
     SDL_DestroyGPUDevice(gpu);
     SDL_Quit();
     return result;
+
 }
