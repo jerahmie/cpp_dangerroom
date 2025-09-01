@@ -5,6 +5,21 @@
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL.h>
 
+// the vertex input layout
+struct Vertex
+{
+	float x, y, z;	  // vec3 position
+	float r, g, b, a; // vec4 color
+};
+
+// a list of vertices
+static Vertex vertices[]
+{
+	{0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f},    // top vertex
+	{-0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f},  // bottom left vertex
+	{0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f} // bottom right vertex
+};
+
 SDL_Window *window;
 SDL_GPUDevice *device;
 SDL_GPUBuffer *vertexBuffer;
