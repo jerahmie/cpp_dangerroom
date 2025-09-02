@@ -36,27 +36,85 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 	SDL_ClaimWindowForGPUDevice(device, window);
 
 	// load vertex shader code
-	//
+	size_t vertexCodeSize;
+	void *vertexCode = SDL_LoadFile("shaders/vertex_triangle.spv",
+																	&vertexCodeSize);
+
 	// create vertex shader
-	//
-	// free the file
-	//
+	SDL_GPUShaderCreateInfo vertexInfo{};
+	vertexInfo.code = (Uint8*)vertexCode;
+	vertexInfo.code_size = vertexCodeSize;
+	vertexInfo.entrypoint = "main";
+	vertexInfo.format = SDL_GPU_SHADERFORMAT_SPIRV;
+	vertexInfo.stage = SDL_GPU_SHADERSTAGE_VERTEX;
+	vertexInfo.num_samplers = 0;
+	vertexInfo.num_storage_buffers = 0;
+	vertexInfo.num_storage_textures = 0;
+	vertexInfo.num_uniform_buffers = 0;
+
+	SDL_GPUShader *vertexShader = SDL_CreateGPUShader(device,
+																										&vertexInfo);	
+
+	// free the vertex shader file
+	SDL_free(vertexCode);
+
 	// load the fragment shader code
-	//
+	size_t fragmentCodeSize;
+	void *fragmentCode = SDL_LoadFile("shaders/fragment_triangle.spv",
+																		&fragmentCodeSize);
+
 	// create the fragment shader
-	//
-	// free the file
-	//
+	SDL_GPUShaderCreateInfo fragmentInfo{};
+	fragmentInfo.code = (Uint8*)fragmentCode;
+	fragmentInfo.code_size = fragmentCodeSize;
+	fragmentInfo.entrypoint = "main";
+	fragmentInfo.format = SDL_GPU_SHADERFORMAT_SPIRV;
+	fragmentInfo.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
+	fragmentInfo.num_samplers = 0;
+	fragmentInfo.num_storage_buffers = 0;
+	fragmentInfo.num_storage_textures = 0;
+	fragmentInfo.num_storage_buffers = 0;
+
+	SDL_GPUShader *fragmentShader = SDL_CreateGPUShader(device,
+																											&fragmentInfo);
+	// free the fragment file
+	SDL_free(fragmentCode);
+	
+	// Create the graphics pipeline
+	SDL_GPUGraphicsPipelineCreateInfo pipelineInfo{};
+	pipelineInfo.vertex_shader = vertexShader;
+	pipelineInfo.fragment_shader = fragmentShader;
+  pipelineInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
+	
 	// describe the vertex buffers
-	//
+	SDL_GPUVertexBufferDescription vertexBufferDescriptions[1];
+	vertexBufferDescriptions[0].slot = 0;
+	vertexBufferDescriptions[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+	vertexBufferDescriptions[0].instance_step_rate = 0;
+	vertexBufferDescriptions[0].pitch = sizeof(Vertex);
+	
+	pipelineInfo.vertex_input_state.num_vertex_buffers = 1;
+	pipelineInfo.vertex_input_state.vertex_buffer_descriptions = vertexBufferDescriptions;
+
 	// describe the vertex attribute
-	//
+	SDL_GPUVertexAttribute vertexAttributes[2];
+
   // a_position
-	//
+	vertexAttributes[0].buffer_slot = 0;
+	vertexAttributes[0].location = 0;
+	vertexAttributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
+	vertexAttributes[0].offset = 0;
+
 	// a_color
-	//
+	vertexAttributes[1].buffer_slot = 0;
+	vertexAttributes[1].location = 1;
+	vertexAttributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4;
+
+	pipelineInfo.vertex_input_state.num_vertex_attributes = 2;
+	pipelineInfo.vertex_input_state.vertex_attributes = vertexAttributes;	
+
 	// describe the color target
-	//
+	SDL_GPUColorTargetDescription colorTargetDescriptions[1];
 	// create the pipeline
 	//
 	// release shaders
