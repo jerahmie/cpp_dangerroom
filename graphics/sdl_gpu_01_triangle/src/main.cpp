@@ -20,6 +20,7 @@ static Vertex vertices[]
 	{0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f} // bottom right vertex
 };
 
+
 SDL_Window *window;
 SDL_GPUDevice *device;
 SDL_GPUBuffer *vertexBuffer;
@@ -28,17 +29,22 @@ SDL_GPUGraphicsPipeline *graphicsPipeline;
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 {
+	SDL_Log("SDL_AppInit\n");
 	// create a window
 	window = SDL_CreateWindow("Hello, Triangle!", 960, 540, SDL_WINDOW_RESIZABLE);
 
 	// create gpu device
-	device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, false, NULL);
+	device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, NULL);
 	SDL_ClaimWindowForGPUDevice(device, window);
 
 	// load vertex shader code
+	SDL_Log("Loading Vertex Shader...\n");
 	size_t vertexCodeSize;
-	void *vertexCode = SDL_LoadFile("shaders/vertex_triangle.spv",
-																	&vertexCodeSize);
+	void *vertexCode = SDL_LoadFile("vertex_triangle.spv", &vertexCodeSize);
+	if (!vertexCodeSize) {
+		SDL_Log("Load vertex shader failed: %s\n", SDL_GetError());
+		return SDL_APP_FAILURE;
+	}
 
 	// create vertex shader
 	SDL_GPUShaderCreateInfo vertexInfo{};
@@ -52,16 +58,20 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 	vertexInfo.num_storage_textures = 0;
 	vertexInfo.num_uniform_buffers = 0;
 
-	SDL_GPUShader *vertexShader = SDL_CreateGPUShader(device,
-																										&vertexInfo);	
+	SDL_GPUShader *vertexShader = SDL_CreateGPUShader(device, &vertexInfo);	
 
 	// free the vertex shader file
 	SDL_free(vertexCode);
 
 	// load the fragment shader code
+	SDL_Log("Loading Fragment Shader...\n");
 	size_t fragmentCodeSize;
-	void *fragmentCode = SDL_LoadFile("shaders/fragment_triangle.spv",
-																		&fragmentCodeSize);
+	void *fragmentCode = SDL_LoadFile("fragment_triangle.spv", &fragmentCodeSize);
+	if (!fragmentCodeSize) {
+		SDL_Log("Load fragment shader failed: %s\n", SDL_GetError());
+		return SDL_APP_FAILURE;
+	}
+		
 
 	// create the fragment shader
 	SDL_GPUShaderCreateInfo fragmentInfo{};
@@ -73,10 +83,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 	fragmentInfo.num_samplers = 0;
 	fragmentInfo.num_storage_buffers = 0;
 	fragmentInfo.num_storage_textures = 0;
-	fragmentInfo.num_storage_buffers = 0;
+	fragmentInfo.num_uniform_buffers = 1;
 
-	SDL_GPUShader *fragmentShader = SDL_CreateGPUShader(device,
-																											&fragmentInfo);
+	SDL_GPUShader *fragmentShader = SDL_CreateGPUShader(device, &fragmentInfo);
 	// free the fragment file
 	SDL_free(fragmentCode);
 	
@@ -115,39 +124,86 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 
 	// describe the color target
 	SDL_GPUColorTargetDescription colorTargetDescriptions[1];
+	colorTargetDescriptions[0] = {};
+	colorTargetDescriptions[0].blend_state.enable_blend = true;
+	colorTargetDescriptions[0].blend_state.color_blend_op = SDL_GPU_BLENDOP_ADD;
+	colorTargetDescriptions[0].blend_state.alpha_blend_op = SDL_GPU_BLENDOP_ADD;
+	colorTargetDescriptions[0].blend_state.src_color_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
+	colorTargetDescriptions[0].blend_state.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+	colorTargetDescriptions[0].blend_state.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
+	colorTargetDescriptions[0].blend_state.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+	colorTargetDescriptions[0].format = SDL_GetGPUSwapchainTextureFormat(device, window);
+
+	pipelineInfo.target_info.num_color_targets = 1;
+	pipelineInfo.target_info.color_target_descriptions = colorTargetDescriptions;
+
 	// create the pipeline
-	//
+	graphicsPipeline = SDL_CreateGPUGraphicsPipeline(device, &pipelineInfo);	
+	
 	// release shaders
-	//
+	SDL_ReleaseGPUShader(device, vertexShader);
+	SDL_ReleaseGPUShader(device, fragmentShader);
+
 	// create the vertex buffer
-	//
+	SDL_GPUBufferCreateInfo bufferInfo{};
+	bufferInfo.size = sizeof(vertices);
+	bufferInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+	
+	vertexBuffer = SDL_CreateGPUBuffer(device, &bufferInfo);
+
 	// create a transfer buffer to upload to the vertex buffer
-	//
+	SDL_GPUTransferBufferCreateInfo transferInfo{};
+	transferInfo.size = sizeof(vertices);
+	transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+	transferBuffer = SDL_CreateGPUTransferBuffer(device, &transferInfo);
+
 	// fill the transfer buffer
-	//
+	Vertex *data = (Vertex*)SDL_MapGPUTransferBuffer(device, transferBuffer, false);
+	SDL_memcpy(data, (void*)vertices, sizeof(vertices));
+
+	SDL_UnmapGPUTransferBuffer(device, transferBuffer);
+
 	// start a copy pass
-	//
+	SDL_GPUCommandBuffer *commandBuffer = SDL_AcquireGPUCommandBuffer(device);
+	SDL_GPUCopyPass *copyPass = SDL_BeginGPUCopyPass(commandBuffer);
+
 	// where is the data
-	//
+	SDL_GPUTransferBufferLocation location{};
+	location.transfer_buffer = transferBuffer;
+	location.offset = 0;
+
 	// where to upload the data
-	//
+	SDL_GPUBufferRegion region{};
+	region.buffer = vertexBuffer;
+	region.size = sizeof(vertices);
+	region.offset = 0;
+
 	// upload the data
-	//
+	SDL_UploadToGPUBuffer(copyPass, &location, &region, true);
+
 	// end the copy pass
+	SDL_EndGPUCopyPass(copyPass);
+	SDL_SubmitGPUCommandBuffer(commandBuffer);
 
 	return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppIterate(void *appstate)
 {
+	struct UniformBuffer
+	{
+		float time;
+	};
+
+	static UniformBuffer timeUniform{};
+
 	// acquire the command buffer
 	SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(device);
 
 	// get the swapchain texture
 	SDL_GPUTexture* swapchainTexture;
 	Uint32 width, height;
-	SDL_WaitAndAcquireGPUSwapchainTexture(commandBuffer, window,
-																				&swapchainTexture, &width, &height);
+	SDL_WaitAndAcquireGPUSwapchainTexture(commandBuffer, window, &swapchainTexture, &width, &height);
 
 	// end the frame early if a swapchain texture is not available
 	if (swapchainTexture == NULL)
@@ -171,9 +227,22 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 	colorTargetInfo.texture = swapchainTexture;
 
 	// Begin a render pass
-	SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(commandBuffer,
-																											&colorTargetInfo, 1, NULL);	
+	SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(commandBuffer, &colorTargetInfo, 1, NULL);	
+
 	// draw something
+	SDL_BindGPUGraphicsPipeline(renderPass, graphicsPipeline);
+
+	// bind the vertex buffer
+	SDL_GPUBufferBinding bufferBindings[1];
+	bufferBindings[0].buffer = vertexBuffer;
+	bufferBindings[0].offset = 0;
+
+	SDL_BindGPUVertexBuffers(renderPass, 0, bufferBindings, 1);
+	
+	timeUniform.time = SDL_GetTicksNS() /1e9f;
+	SDL_PushGPUFragmentUniformData(commandBuffer, 0, &timeUniform, sizeof(UniformBuffer));
+	// issue a draw call
+	SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);	
 	
 	// End the render pass
 	SDL_EndGPURenderPass(renderPass);
@@ -202,9 +271,11 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
 void SDL_AppQuit(void *appstate, SDL_AppResult result)
 {
 	// release buffers
-	//
+	SDL_ReleaseGPUBuffer(device, vertexBuffer);
+	SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
 	// release the pipeline
-	//
+	SDL_ReleaseGPUGraphicsPipeline(device, graphicsPipeline);
+	
 	// destroy the GPU device
 	SDL_DestroyGPUDevice(device);
 
