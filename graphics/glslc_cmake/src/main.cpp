@@ -40,7 +40,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 	// load vertex shader code
 	SDL_Log("Loading Vertex Shader...\n");
 	size_t vertexCodeSize;
-	void *vertexCode = SDL_LoadFile("triangle.vert.spv", &vertexCodeSize);
+	void *vertexCode = SDL_LoadFile("vertex_triangle.spv", &vertexCodeSize);
 	if (!vertexCodeSize) {
 		SDL_Log("Load vertex shader failed: %s\n", SDL_GetError());
 		return SDL_APP_FAILURE;
@@ -66,7 +66,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 	// load the fragment shader code
 	SDL_Log("Loading Fragment Shader...\n");
 	size_t fragmentCodeSize;
-	void *fragmentCode = SDL_LoadFile("triangle.frag.spv", &fragmentCodeSize);
+	void *fragmentCode = SDL_LoadFile("fragment_triangle.spv", &fragmentCodeSize);
 	if (!fragmentCodeSize) {
 		SDL_Log("Load fragment shader failed: %s\n", SDL_GetError());
 		return SDL_APP_FAILURE;
